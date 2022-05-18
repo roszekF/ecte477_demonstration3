@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="ecte477_demonstration3" type="my_node.py" name="my_node" output="screen"/>
+</launch>
