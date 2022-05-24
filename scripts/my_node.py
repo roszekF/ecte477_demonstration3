@@ -19,7 +19,7 @@ class line_follower:
             {'id': 1, 'lower': (27, 241, 92), 'upper': (33, 255, 255), 'name': 'yellow', 'RGBA': (0.5,0.5,0,1)},
             {'id': 2, 'lower': (115, 220, 92), 'upper': (130, 255, 255), 'name': 'blue', 'RGBA': (0,0,1,1)}]
 
-        self.stoped = False
+        self.stopped = False
 
         # Object for storing path
         self.path = Path()
@@ -91,9 +91,9 @@ class line_follower:
                 cxs[range['id']] = cx
                 cys[range['id']] = cy
 
-        if cxs[2] >= 1400 and cys[2] <= 300 and not self.stoped:
+        if cxs[2] >= 1400 and cys[2] <= 300 and not self.stopped:
             rospy.loginfo('Stopping!')
-            self.stoped = True
+            self.stopped = True
             self.cmd_vel_pub.publish(twist)
             rospy.sleep(3)
         else:
