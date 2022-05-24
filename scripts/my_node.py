@@ -88,9 +88,11 @@ class line_follower:
 
                 cv2.circle(overlay, (cx, cy), 20, (0,255,0), -1)
 
+                # store the center coordinates in a arrays
                 cxs[range['id']] = cx
                 cys[range['id']] = cy
-
+        
+        # check for the blue contour if it is in the top right corner
         if cxs[2] >= 1400 and cys[2] <= 300 and not self.stopped:
             rospy.loginfo('Stopping!')
             self.stopped = True
@@ -116,8 +118,8 @@ class line_follower:
         self.image = overlay
 
     # get the camera info
-    def callback_camera_info(self, camera_info):
-        self.K = np.array(camera_info.K).reshape([3, 3])
+    # def callback_camera_info(self, camera_info):
+    #     self.K = np.array(camera_info.K).reshape([3, 3])
 
     # Simply repeact the map data to the correct topic
     def callback_map(self, data):
