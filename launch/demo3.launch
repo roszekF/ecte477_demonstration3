@@ -1,3 +1,20 @@
 <launch>
+    <!-- Arguments -->   
+    <arg name="open_rviz" default="false" />   
+
+    <!-- SLAM -->
+    <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch">
+        <arg name="open_rviz" value="$(arg open_rviz)" />
+    </include>
+
+    <!-- Navigation -->
+    <include file="$(find turtlebot3_navigation)/launch/move_base.launch" />
+    <include file="$(find turtlebot3_navigation)/launch/amcl.launch" />
+
+    <!-- My Node -->
     <node pkg="ecte477_demonstration3" type="my_node.py" name="my_node" output="screen"/>
+
+    <!-- RViz -->
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(find ecte477_demonstration3)/rviz/demo3.rviz"/>
 </launch>
