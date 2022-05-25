@@ -20,6 +20,7 @@ class line_follower:
             {'id': 2, 'lower': (115, 220, 92), 'upper': (130, 255, 255), 'name': 'blue', 'RGBA': (0,0,1,1)}]
 
         self.stopped = False
+        self.timeStopped = None
 
         # Object for storing path
         self.path = Path()
@@ -54,7 +55,7 @@ class line_follower:
         rospy.loginfo('[%s] callback_camera()', self.name)
         colour_image = self.bridge.imgmsg_to_cv2(colour_msg, desired_encoding='bgr8')
         overlay = colour_image
-        # depth_image = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='passthrough')
+        depth_image = self.bridge.imgmsg_to_cv2(depth_msg, desired_encoding='passthrough')
         # self.image = colour_image
 
         # lower_yellow = (15, 200, 100)
@@ -66,6 +67,8 @@ class line_follower:
         twist.linear.x = 0.0
         twist.angular.z = 0.0
 
+        h, w, d = colour_image.shape
+
         cxs = [None, None, None]
         cys = [None, None, None]
 
@@ -75,7 +78,6 @@ class line_follower:
             mask = cv2.erode(mask, None, iterations=2)
             mask = cv2.dilate(mask, None, iterations=2)
 
-            h, w, d = colour_image.shape
             # mask out the frame, leave 20 px gap at 3/4 of the height (from top)
             if range['id'] != 2:
                 mask[0 : 3*h/4, 0:w] = 0
@@ -92,27 +94,34 @@ class line_follower:
                 cxs[range['id']] = cx
                 cys[range['id']] = cy
         
-        # check for the blue contour if it is in the top right corner
-        if cxs[2] >= 1400 and cys[2] <= 300 and not self.stopped:
+        # check for the blue contour if it is detected and if it is close enough
+        if cxs[2] != None and 0 < depth_image[cys[2], cxs[2]] < 0.5 and not self.stopped:
             rospy.loginfo('Stopping!')
             self.stopped = True
-            self.cmd_vel_pub.publish(twist)
-            rospy.sleep(3)
-        else:
-            # both lines are detected
-            if cxs[0] != None and cxs[1] != None:
-                err = (cxs[0]+cxs[1])/2 - w/2
-                twist.linear.x = 0.18
-                twist.angular.z = -float(err) / 1000
-            # only yellow line is detected
-            elif cxs[0] == None and cxs[1] != None:
-                twist.linear.x = 0.1
-                twist.angular.z = -0.15
-            # only red line is detected
-            elif cxs[0] != None and cxs[1] == None:
-                twist.linear.x = 0.1
-                twist.angular.z = 0.15
-            # if none of the lines are detected => no movement
+            self.timeStopped = rospy.Time.now()
+        
+        # both lines are detected
+        if cxs[0] != None and cxs[1] != None:
+            err = (cxs[0]+cxs[1])/2 - w/2
+            twist.linear.x = 0.15
+            twist.angular.z = -float(err) / 1000
+        # only yellow line is detected
+        elif cxs[0] == None and cxs[1] != None:
+            twist.linear.x = 0.15
+            twist.angular.z = -0.15
+        # only red line is detected
+        elif cxs[0] != None and cxs[1] == None:
+            twist.linear.x = 0.15
+            twist.angular.z = 0.15
+        # if none of the lines are detected => no movement
+
+        # Stop if there is an obstacle on the way
+        if 0 < depth_image[h/2, w/2] < 0.7 or self.stopped and rospy.Time.now() - self.timeStopped < rospy.Duration(secs=2):
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+        # else:
+        #     self.stopped = False
+        
 
         self.cmd_vel_pub.publish(twist)
         self.image = overlay
